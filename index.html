@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>To-Do List App Pro</title>
+<style>
+    * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .container {
+    background: white;
+    width: 100%;
+    max-width: 500px;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+  }
+
+  h1 {
+    text-align: center;
+    color: #667eea;
+    margin-bottom: 20px;
+  }
+
+  .input-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  input {
+    flex: 1;
+    padding: 14px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 16px;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: #667eea;
+  }
+
+  button {
+    padding: 14px 22px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: 0.2s;
+  }
+
+  button:hover {
+    background: #764ba2;
+    transform: translateY(-2px);
+  }
+
+  .filters {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .filters button {
+    padding: 8px 16px;
+    font-size: 14px;
+    background: #e0e0e0;
+    color: #333;
+  }
+
+  .filters button.active {
+    background: #667eea;
+    color: white;
+  }
+
+  ul {
+    list-style: none;
+    margin-bottom: 15px;
+    min-height: 100px;
+  }
+
+  li {
+    background: #f8f9fa;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from {opacity: 0; transform: translateY(-10px);}
+    to {opacity: 1; transform: translateY(0);}
+  }
+
+  li.completed span {
+    text-decoration: line-through;
+    color: #888;
+  }
+
+  .btn-group button {
+    padding: 8px 14px;
+    font-size: 14px;
+    margin-left: 6px;
+  }
+
+  .complete-btn { background: #28a745; }
+  .delete-btn { background: #dc3545; }
+
+  .footer {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>📝 My To-Do List Pro</h1>
+
+  <div class="input-box">
+    <input type="text" id="taskInput" placeholder="Add a new task...">
+    <button onclick="addTask()">Add</button>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all')">All</button>
+    <button class="filter-btn" onclick="setFilter('pending')">Pending</button>
+    <button class="filter-btn" onclick="setFilter('completed')">Completed</button>
+  </div>
+
+  <ul id="taskList"></ul>
+
+  <div class="footer">
+    <span id="taskCount">0 tasks remaining</span>
+  </div>
+</div>
+
+<script>
+  let tasks = [];
+  let currentFilter = 'all';
+
+  // Load tasks from browser storage when page opens
+  window.onload = function() {
+    tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+    showTasks();
+  }
+
+  // Save tasks to browser storage
+  function saveTasks() {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+  }
+
+  function addTask() {
+    let taskText = document.getElementById('taskInput').value.trim();
+
+    if(taskText === '') {
+      alert('Please enter a task!');
+      return;
+    }
+
+    tasks.push({text: taskText, done: false});
+    saveTasks();
+    document.getElementById('taskInput').value = '';
+    showTasks();
+  }
+
+  function showTasks() {
+    let list = document.getElementById('taskList');
+    list.innerHTML = '';
+
+    let filteredTasks = tasks.filter(task => {
+      if(currentFilter === 'pending') return !task.done;
+      if(currentFilter === 'completed') return task.done;
+      return true;
+    });
+
+    if(filteredTasks.length === 0) {
+      list.innerHTML = '<li style="justify-content:center; color:#999;">No tasks here</li>';
+    }
+
+    filteredTasks.forEach((task) => {
+      let index = tasks.indexOf(task);
+      let li = document.createElement('li');
+      if(task.done) li.classList.add('completed');
+
+      li.innerHTML = `
+        <span>${task.text}</span>
+        <div class="btn-group">
+          <button class="complete-btn" onclick="completeTask(${index})">✓</button>
+          <button class="delete-btn" onclick="deleteTask(${index})">✗</button>
+        </div>
+      `;
+      list.appendChild(li);
+    });
+
+    updateCount();
+  }
+
+  function completeTask(index) {
+    tasks[index].done = !tasks[index].done; // Toggle complete/pending
+    saveTasks();
+    showTasks();
+  }
+
+  function deleteTask(index) {
+    tasks.splice(index, 1);
+    saveTasks();
+    showTasks();
+  }
+
+  function setFilter(filter) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    showTasks();
+  }
+
+  function updateCount() {
+    let pending = tasks.filter(t => !t.done).length;
+    document.getElementById('taskCount').innerText = `${pending} task${pending !== 1 ? 's' : ''} remaining`;
+  }
+
+  // Add task on Enter key
+  document.getElementById('taskInput').addEventListener('keypress', function(e) {
+    if(e.key === 'Enter') addTask();
+  });
+</script>
+
+</body>
+</html>
